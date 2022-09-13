@@ -9,18 +9,19 @@ namespace GameEntityScript
 {
 	public class GameEntityResource : Resource 
 	{
-        private static void InitEntitySync()
+        private void InitEntitySync()
         {
             AltEntitySync.Init(
                 1,
                 (threadId) => 100,
-                (threadId) => false,
+                (threadId) => true,
                 (threadCount, repository) => new ServerEventNetworkLayer(threadCount, repository),
                 (entity, threadCount) => (entity.Id % threadCount),
                 (entityId, entityType, threadCount) => (entityId % threadCount),
                 (threadId) => new LimitedGrid3(50_000, 50_000, 100, 10_000, 10_000, 300),
                 new IdProvider()
             );
+            Alt.Log("InitEntitySync");
         }
 
         private void RegisterExports()
@@ -38,7 +39,7 @@ namespace GameEntityScript
             Alt.Export("resetGameEntityData", new Action<long, long, String>(this.ResetGameEntityData));
         }
 
-        private static IEntity? GetGameEntity(long id, long type)
+        private IEntity? GetGameEntity(long id, long type)
         {
 
             if (!AltEntitySync.TryGetEntity((ulong)id, (ulong)type, out IEntity entity))
@@ -56,21 +57,21 @@ namespace GameEntityScript
 
         private void RemoveGameEntity(long id, long type)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if (entity != null) AltEntitySync.RemoveEntity(entity);
         }
 
         private bool DoesGameEntityExist(long id, long type)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             return entity != null;
         }
 
         private void SetGameEntityPosition(long id, long type, Vector3 position)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if (entity == null)
             {
@@ -83,7 +84,7 @@ namespace GameEntityScript
 
         private Vector3 GetGameEntityPosition(long id, long type)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if (entity == null)
             {
@@ -96,7 +97,7 @@ namespace GameEntityScript
 
         private uint GetGameEntityRange(long id, long type)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if (entity == null)
             {
@@ -109,7 +110,7 @@ namespace GameEntityScript
 
         private void SetGameEntityDimension(long id, long type, int dimension)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if (entity == null)
             {
@@ -122,7 +123,7 @@ namespace GameEntityScript
 
         private int GetGameEntityDimension(long id, long type)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if (entity == null)
             {
@@ -135,7 +136,7 @@ namespace GameEntityScript
 
         private void SetGameEntityData(long id, long type, String key, object? value)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if(entity == null)
             {
@@ -152,7 +153,7 @@ namespace GameEntityScript
 
         private object? GetGameEntityData(long id, long type, String key)
         {
-            IEntity? entity = GetGameEntity(id, type);
+            IEntity? entity = this.GetGameEntity(id, type);
 
             if (entity == null)
             {
@@ -177,7 +178,7 @@ namespace GameEntityScript
 
         public override void OnStart()
         {
-            InitEntitySync();
+            this.InitEntitySync();
             this.RegisterExports();
         }
 
