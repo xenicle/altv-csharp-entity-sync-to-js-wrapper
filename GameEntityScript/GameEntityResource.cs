@@ -9,12 +9,12 @@ namespace GameEntityScript
 {
 	public class GameEntityResource : Resource 
 	{
-        private void InitEntitySync()
+        private static void InitEntitySync()
         {
             AltEntitySync.Init(
                 1,
-                100,
-                true,
+                (threadId) => 100,
+                (threadId) => false,
                 (threadCount, repository) => new ServerEventNetworkLayer(threadCount, repository),
                 (entity, threadCount) => (entity.Id % threadCount),
                 (entityId, entityType, threadCount) => (entityId % threadCount),
@@ -34,15 +34,14 @@ namespace GameEntityScript
             Alt.Export("setGameEntityDimension", new Action<long, long, int>(this.SetGameEntityDimension));
             Alt.Export("getGameEntityDimension", new Func<long, long, int>(this.GetGameEntityDimension));
             Alt.Export("setGameEntityData", new Action<long, long, String, object>(this.SetGameEntityData));
-            Alt.Export("getGameEntityData", new Func<long, long, String, object>(this.GetGameEntityData));
+            Alt.Export("getGameEntityData", new Func<long, long, String, object?>(this.GetGameEntityData));
             Alt.Export("resetGameEntityData", new Action<long, long, String>(this.ResetGameEntityData));
         }
 
-        private IEntity GetGameEntity(long id, long type)
+        private static IEntity? GetGameEntity(long id, long type)
         {
-            IEntity entity;
 
-            if (!AltEntitySync.TryGetEntity((ulong)id, (ulong)type, out entity))
+            if (!AltEntitySync.TryGetEntity((ulong)id, (ulong)type, out IEntity entity))
                 return null;
 
             return entity;
@@ -57,25 +56,25 @@ namespace GameEntityScript
 
         private void RemoveGameEntity(long id, long type)
         {
-            IEntity entity = this.GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
-            AltEntitySync.RemoveEntity(entity);
+            if (entity != null) AltEntitySync.RemoveEntity(entity);
         }
 
         private bool DoesGameEntityExist(long id, long type)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             return entity != null;
         }
 
         private void SetGameEntityPosition(long id, long type, Vector3 position)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             if (entity == null)
             {
-                Console.WriteLine("[WARN] GameEntityResource::SetGameEntityPosition was called with invalid entity!");
+                Alt.Log("[WARN] GameEntityResource::SetGameEntityPosition was called with invalid entity!");
                 return;
             }
 
@@ -84,11 +83,11 @@ namespace GameEntityScript
 
         private Vector3 GetGameEntityPosition(long id, long type)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             if (entity == null)
             {
-                Console.WriteLine("[WARN] GameEntityResource::GetGameEntityPosition was called with invalid entity!");
+                Alt.Log("[WARN] GameEntityResource::GetGameEntityPosition was called with invalid entity!");
                 return new Vector3();
             }
 
@@ -97,11 +96,11 @@ namespace GameEntityScript
 
         private uint GetGameEntityRange(long id, long type)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             if (entity == null)
             {
-                Console.WriteLine("[WARN] GameEntityResource::GetGameEntityRange was called with invalid entity!");
+                Alt.Log("[WARN] GameEntityResource::GetGameEntityRange was called with invalid entity!");
                 return 0;
             }
 
@@ -110,11 +109,11 @@ namespace GameEntityScript
 
         private void SetGameEntityDimension(long id, long type, int dimension)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             if (entity == null)
             {
-                Console.WriteLine("[WARN] GameEntityResource::SetGameEntityDimension was called with invalid entity!");
+                Alt.Log("[WARN] GameEntityResource::SetGameEntityDimension was called with invalid entity!");
                 return;
             }
 
@@ -123,24 +122,24 @@ namespace GameEntityScript
 
         private int GetGameEntityDimension(long id, long type)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             if (entity == null)
             {
-                Console.WriteLine("[WARN] GameEntityResource::GetGameEntityDimension was called with invalid entity!");
+                Alt.Log("[WARN] GameEntityResource::GetGameEntityDimension was called with invalid entity!");
                 return 0;
             }
 
             return entity.Dimension;
         }
 
-        private void SetGameEntityData(long id, long type, String key, object value)
+        private void SetGameEntityData(long id, long type, String key, object? value)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             if(entity == null)
             {
-                Console.WriteLine("[WARN] GameEntityResource::SetGameEntityData was called with invalid entity!");
+                Alt.Log("[WARN] GameEntityResource::SetGameEntityData was called with invalid entity!");
                 return;
             }
 
@@ -151,21 +150,20 @@ namespace GameEntityScript
                 entity.SetData(key, value);
         }
 
-        private object GetGameEntityData(long id, long type, String key)
+        private object? GetGameEntityData(long id, long type, String key)
         {
-            IEntity entity = GetGameEntity(id, type);
+            IEntity? entity = GetGameEntity(id, type);
 
             if (entity == null)
             {
-                Console.WriteLine("[WARN] GameEntityResource::GetGameEntityData was called with invalid entity!");
+                Alt.Log("[WARN] GameEntityResource::GetGameEntityData was called with invalid entity!");
                 return null;
             }
 
-            object result;
 
-            if(!entity.TryGetData(key, out result))
+            if (!entity.TryGetData(key, out object result))
             {
-                Console.WriteLine("[WARN] GameEntityResource::GetGameEntityData was called with invalid data key!"); ;
+                Alt.Log("[WARN] GameEntityResource::GetGameEntityData was called with invalid data key!");
                 return null;
             }
 
@@ -179,7 +177,7 @@ namespace GameEntityScript
 
         public override void OnStart()
         {
-            this.InitEntitySync();
+            InitEntitySync();
             this.RegisterExports();
         }
 
