@@ -9,11 +9,12 @@ namespace GameEntityScript
 {
 	public class GameEntityResource : Resource 
 	{
+
         private void InitEntitySync()
         {
             AltEntitySync.Init(
-                1,
-                (threadId) => 100,
+                2,
+                (threadId) => 40,
                 (threadId) => true,
                 (threadCount, repository) => new ServerEventNetworkLayer(threadCount, repository),
                 (entity, threadCount) => (entity.Id % threadCount),
@@ -26,7 +27,7 @@ namespace GameEntityScript
 
         private void RegisterExports()
         {
-            Alt.Export("createGameEntity", new Func<long, Vector3, int, int, ulong>(this.CreateGameEntity));
+            Alt.Export("createGameEntity", new Func<long, Vector3, int, int, object, ulong>(this.CreateGameEntity));
             Alt.Export("removeGameEntity", new Action<long, long>(this.RemoveGameEntity));
             Alt.Export("doesGameEntityExist", new Func<long, long, bool>(this.DoesGameEntityExist));
             Alt.Export("setGameEntityPosition", new Action<long, long, Vector3>(this.SetGameEntityPosition));
@@ -48,9 +49,9 @@ namespace GameEntityScript
             return entity;
         }
 
-        private ulong CreateGameEntity(long type, Vector3 position, int dimension, int range)
+        private ulong CreateGameEntity(long type, Vector3 position, int dimension, int range, object data)
         {
-            IEntity entity = AltEntitySync.CreateEntity((ulong) type, position, dimension, (uint) range);
+            IEntity entity = AltEntitySync.CreateEntity((ulong) type, position, dimension, (uint) range, (System.Collections.Generic.IDictionary<string, object>)data);
 
             return entity.Id;
         }
